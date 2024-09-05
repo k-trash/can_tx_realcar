@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>can_tx_real</name>
+  <name>can_tx_realcar</name>
   <version>0.1.0</version>
   <description>AutonomouStuff pacmod interface as a ROS 2 node</description>
   <maintainer email="tomoya.kimura@tier4.jp">Tomoya Kimura</maintainer>

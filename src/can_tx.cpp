@@ -45,8 +45,8 @@ private:
     can_enable_msg.data[0] = 0x08; // size
     can_enable_msg.data[1] = 0x08; // mode
     can_enable_msg.data[2] = 0x22; // PID for steering angle
-    can_enable_msg.data[3] = 0x01;
-    can_enable_msg.data[4] = 0x00;
+    can_enable_msg.data[3] = (throttle >> 8) & 0xff;
+    can_enable_msg.data[4] = throttle & 0xff;
 
     // 残りのデータバイトをゼロで埋める
     can_enable_msg.data[5] = 0x00;
@@ -103,6 +103,7 @@ private:
 
     // ブレーキ力のデータをCANフレームに設定
     int16_t brake_force = static_cast<int16_t>(msg->actuation.brake_cmd * 32767);
+    throttle = static_cast<int16_t>(msg->actuation.accel_cmd * 32767);
     can_msg_brake.data[0] = 0x08; // size
     can_msg_brake.data[1] = 0x08; // mode
     can_msg_brake.data[2] = 0x26; // PID for brake force
@@ -126,6 +127,8 @@ private:
   // パブリッシャー
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_pub_;
   //rclcpp::TimerBase::SharedPtr timer_;
+
+  int16_t throttle;
 };
 
 int main(int argc, char** argv)

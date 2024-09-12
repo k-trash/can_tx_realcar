@@ -94,6 +94,7 @@ private:
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received actuation command.");
 
     can_msgs::msg::Frame can_msg_brake;
+    can_msgs::msg::Frame can_msg_throttle;
     can_msg_brake.header.stamp = this->get_clock()->now();
     can_msg_brake.id = 0x7DF;
     can_msg_brake.is_rtr = false;
@@ -103,7 +104,7 @@ private:
 
     // ブレーキ力のデータをCANフレームに設定
     int16_t brake_force = static_cast<int16_t>(msg->actuation.brake_cmd * 32767);
-    throttle = static_cast<int16_t>(msg->actuation.accel_cmd * 32767);
+    throttle = static_cast<int16_t>(msg->actuation.accel_cmd * 100);
     can_msg_brake.data[0] = 0x08; // size
     can_msg_brake.data[1] = 0x08; // mode
     can_msg_brake.data[2] = 0x26; // PID for brake force
@@ -117,6 +118,28 @@ private:
 
     // CANメッセージを送信（ブレーキ力）
     can_pub_->publish(can_msg_brake);
+
+    can_msg_throttle.header.stamp = this->get_clock()->now();
+    can_msg_throttle.id = 0x7D7;
+    can_msg_throttle.id = 0x7DF;
+    can_msg_throttle.is_rtr = false;
+    can_msg_throttle.is_extended = false;
+    can_msg_throttle.is_error = false;
+    can_msg_throttle.dlc = 8;
+
+    can_msg_throttle.data[0] = 0x08; // size
+    can_msg_throttle.data[1] = 0x08; // mode
+    can_msg_throttle.data[2] = 0x31; // PID for brake force
+    can_msg_throttle.data[3] = 0x01; // auto mode
+    can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
+    can_msg_throttle.data[5] = throttle;
+    can_msg_throttle.data[6] = 0x00;
+    can_msg_throttle.data[7] = 0x00;
+    for(uint8_t i=0; i<7; i++){
+	    can_msg_throttle.data[7] += can_msg_throttle.data[i];
+    }
+
+    can_pub_->publish(can_msg_throttle);
   }
 
 

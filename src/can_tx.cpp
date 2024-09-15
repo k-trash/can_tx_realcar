@@ -151,7 +151,6 @@ private:
 		if(msg_->data[1] == 0x01){
 			can_msg_throttle.header.stamp = this->get_clock()->now();
 			can_msg_throttle.id = 0x7D7;
-			can_msg_throttle.id = 0x7DF;
 			can_msg_throttle.is_rtr = false;
 			can_msg_throttle.is_extended = false;
 			can_msg_throttle.is_error = false;

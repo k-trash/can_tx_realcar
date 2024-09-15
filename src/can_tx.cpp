@@ -55,7 +55,7 @@ private:
     can_enable_msg.data[7] = 0x00;
 
     // CANメッセージを送信
-    can_pub_->publish(can_enable_msg);
+    //can_pub_->publish(can_enable_msg);
 
 
     // CANフレームを作成（ステアリング角度用）
@@ -83,7 +83,7 @@ private:
     can_msg.data[7] = 0x00;
 
     // CANメッセージを送信
-    can_pub_->publish(can_msg);
+    //can_pub_->publish(can_msg);
   }
 
 
@@ -118,7 +118,7 @@ private:
     can_msg_brake.data[7] = 0x00;
 
     // CANメッセージを送信（ブレーキ力）
-    can_pub_->publish(can_msg_brake);
+    //can_pub_->publish(can_msg_brake);
 
     //can_msg_throttle.header.stamp = this->get_clock()->now();
     //can_msg_throttle.id = 0x7D7;

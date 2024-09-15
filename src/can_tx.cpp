@@ -23,6 +23,7 @@ public:
         "/control/command/actuation_cmd", 10,
         std::bind(&AutowareToCantx::actuationCmdCallback, this, std::placeholders::_1));
     
+	can_sub = this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10, std::bind(&AutowareToCantx::canCallback, this, std::placeholders::_1));
 
     // CANトピックのパブリッシャーの初期化
     can_pub_ = this->create_publisher<can_msgs::msg::Frame>("/can_tx", 10);
@@ -94,7 +95,7 @@ private:
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received actuation command.");
 
     can_msgs::msg::Frame can_msg_brake;
-    can_msgs::msg::Frame can_msg_throttle;
+ //   can_msgs::msg::Frame can_msg_throttle;
     can_msg_brake.header.stamp = this->get_clock()->now();
     can_msg_brake.id = 0x7DF;
     can_msg_brake.is_rtr = false;
@@ -119,34 +120,62 @@ private:
     // CANメッセージを送信（ブレーキ力）
     can_pub_->publish(can_msg_brake);
 
-    can_msg_throttle.header.stamp = this->get_clock()->now();
-    can_msg_throttle.id = 0x7D7;
-    can_msg_throttle.id = 0x7DF;
-    can_msg_throttle.is_rtr = false;
-    can_msg_throttle.is_extended = false;
-    can_msg_throttle.is_error = false;
-    can_msg_throttle.dlc = 8;
+    //can_msg_throttle.header.stamp = this->get_clock()->now();
+    //can_msg_throttle.id = 0x7D7;
+    //can_msg_throttle.id = 0x7DF;
+    //can_msg_throttle.is_rtr = false;
+    //can_msg_throttle.is_extended = false;
+    //can_msg_throttle.is_error = false;
+    //can_msg_throttle.dlc = 8;
 
-    can_msg_throttle.data[0] = 0x08; // size
-    can_msg_throttle.data[1] = 0x08; // mode
-    can_msg_throttle.data[2] = 0x31; // PID for brake force
-    can_msg_throttle.data[3] = 0x01; // auto mode
-    can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
-    can_msg_throttle.data[5] = throttle;
-    can_msg_throttle.data[6] = 0x00;
-    can_msg_throttle.data[7] = 0x00;
-    for(uint8_t i=0; i<7; i++){
-	    can_msg_throttle.data[7] += can_msg_throttle.data[i];
-    }
+    //can_msg_throttle.data[0] = 0x08; // size
+    //can_msg_throttle.data[1] = 0x08; // mode
+    //can_msg_throttle.data[2] = 0x31; // PID for brake force
+    //can_msg_throttle.data[3] = 0x01; // auto mode
+    //can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
+    //can_msg_throttle.data[5] = throttle;
+    //can_msg_throttle.data[6] = 0x00;
+    //can_msg_throttle.data[7] = 0x00;
+    //for(uint8_t i=0; i<7; i++){
+	    //can_msg_throttle.data[7] += can_msg_throttle.data[i];
+    //}
 
-    can_pub_->publish(can_msg_throttle);
+    //can_pub_->publish(can_msg_throttle);
   }
 
+	void canCallback(const can_msgs::msg::Frame::SharedPtr msg_){
+		can_msgs::msg::Frame can_msg_throttle;
+
+		can_msg_throttle.header.stamp = this->get_clock()->now();
+		can_msg_throttle.id = 0x7D7;
+		can_msg_throttle.id = 0x7DF;
+		can_msg_throttle.is_rtr = false;
+		can_msg_throttle.is_extended = false;
+		can_msg_throttle.is_error = false;
+		can_msg_throttle.dlc = 8;
+
+		can_msg_throttle.data[0] = 0x08; // size
+		can_msg_throttle.data[1] = 0x08; // mode
+		can_msg_throttle.data[2] = 0x31; // PID for brake force
+		can_msg_throttle.data[3] = 0x01; // auto mode
+		can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
+		can_msg_throttle.data[5] = throttle;
+		can_msg_throttle.data[6] = 0x00;
+		can_msg_throttle.data[7] = 0x00;
+		for(uint8_t i=0; i<7; i++){
+			can_msg_throttle.data[7] += can_msg_throttle.data[i];
+		}
+
+		if(msg_->data[1] == 0x01){
+			can_pub_->publish(can_msg_throttle);
+		}
+	}
 
   // サブスクライバー
   rclcpp::Subscription<autoware_auto_control_msgs::msg::AckermannControlCommand>::SharedPtr control_cmd_sub_;
   //rclcpp::Subscription<autoware_auto_vehicle_msgs::msg::TurnIndicatorsCommand>::SharedPtr turn_indicators_cmd_sub_;
   rclcpp::Subscription<tier4_vehicle_msgs::msg::ActuationCommandStamped>::SharedPtr actuation_cmd_sub_;
+  rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_sub;
   // パブリッシャー
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_pub_;
   //rclcpp::TimerBase::SharedPtr timer_;

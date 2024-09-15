@@ -69,7 +69,7 @@ private:
 
     // ステアリング角度のデータをCANフレームに設定
     // ラジアンから16ビット整数への変換（±45度 = ±0.785ラジアンを最大値としてスケーリング）
-    int16_t steering_angle = static_cast<int16_t>(msg->lateral.steering_tire_angle *32767);
+    steering_angle = static_cast<int16_t>(msg->lateral.steering_tire_angle *32767);
 
     can_msg.data[0] = 0x08; // size
     can_msg.data[1] = 0x08; // mode
@@ -104,7 +104,7 @@ private:
     can_msg_brake.dlc = 8;
 
     // ブレーキ力のデータをCANフレームに設定
-    int16_t brake_force = static_cast<int16_t>(msg->actuation.brake_cmd * 32767);
+    brake_force = static_cast<int16_t>(msg->actuation.brake_cmd * 32767);
     throttle = static_cast<int16_t>(msg->actuation.accel_cmd * 100);
     can_msg_brake.data[0] = 0x08; // size
     can_msg_brake.data[1] = 0x08; // mode
@@ -145,29 +145,75 @@ private:
 
 	void canCallback(const can_msgs::msg::Frame::SharedPtr msg_){
 		can_msgs::msg::Frame can_msg_throttle;
-
-		can_msg_throttle.header.stamp = this->get_clock()->now();
-		can_msg_throttle.id = 0x7D7;
-		can_msg_throttle.id = 0x7DF;
-		can_msg_throttle.is_rtr = false;
-		can_msg_throttle.is_extended = false;
-		can_msg_throttle.is_error = false;
-		can_msg_throttle.dlc = 8;
-
-		can_msg_throttle.data[0] = 0x08; // size
-		can_msg_throttle.data[1] = 0x08; // mode
-		can_msg_throttle.data[2] = 0x31; // PID for brake force
-		can_msg_throttle.data[3] = 0x01; // auto mode
-		can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
-		can_msg_throttle.data[5] = throttle;
-		can_msg_throttle.data[6] = 0x00;
-		can_msg_throttle.data[7] = 0x00;
-		for(uint8_t i=0; i<7; i++){
-			can_msg_throttle.data[7] += can_msg_throttle.data[i];
-		}
+		can_msgs::msg::Frame can_msg;
+		can_msgs::msg::Frame can_msg_brake;
 
 		if(msg_->data[1] == 0x01){
+			can_msg_throttle.header.stamp = this->get_clock()->now();
+			can_msg_throttle.id = 0x7D7;
+			can_msg_throttle.id = 0x7DF;
+			can_msg_throttle.is_rtr = false;
+			can_msg_throttle.is_extended = false;
+			can_msg_throttle.is_error = false;
+			can_msg_throttle.dlc = 8;
+
+			can_msg_throttle.data[0] = 0x08; // size
+			can_msg_throttle.data[1] = 0x08; // mode
+			can_msg_throttle.data[2] = 0x31; // PID for brake force
+			can_msg_throttle.data[3] = 0x01; // auto mode
+			can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
+			can_msg_throttle.data[5] = throttle;
+			can_msg_throttle.data[6] = 0x00;
+			can_msg_throttle.data[7] = 0x00;
+			for(uint8_t i=0; i<7; i++){
+				can_msg_throttle.data[7] += can_msg_throttle.data[i];
+			}
+
 			can_pub_->publish(can_msg_throttle);
+
+			can_msg.header.stamp = this->get_clock()->now();
+			can_msg.id = 0x7DF;
+			can_msg.is_rtr = false;
+			can_msg.is_extended = false;
+			can_msg.is_error = false;
+			can_msg.dlc = 8;
+
+			can_msg.data[0] = 0x08; // size
+			can_msg.data[1] = 0x08; // mode
+			can_msg.data[2] = 0x21; // PID for steering angle
+			can_msg.data[3] = (steering_angle >> 8) & 0xFF; // High byte of steering angle
+			can_msg.data[4] = steering_angle & 0xFF; // Low byte of steering angle
+
+			// 残りのデータバイトをゼロで埋める
+			can_msg.data[5] = 0x00;
+			can_msg.data[6] = 0x00;
+			can_msg.data[7] = 0x00;
+
+			// CANメッセージを送信
+			can_pub_->publish(can_msg);
+
+		//   can_msgs::msg::Frame can_msg_throttle;
+			can_msg_brake.header.stamp = this->get_clock()->now();
+			can_msg_brake.id = 0x7DF;
+			can_msg_brake.is_rtr = false;
+			can_msg_brake.is_extended = false;
+			can_msg_brake.is_error = false;
+			can_msg_brake.dlc = 8;
+
+			// ブレーキ力のデータをCANフレームに設定
+			can_msg_brake.data[0] = 0x08; // size
+			can_msg_brake.data[1] = 0x08; // mode
+			can_msg_brake.data[2] = 0x26; // PID for brake force
+			can_msg_brake.data[3] = (brake_force >> 8) & 0xFF; // High byte of brake force
+			can_msg_brake.data[4] = brake_force & 0xFF; // Low byte of brake force
+
+			// 残りのデータバイトをゼロで埋める
+			can_msg_brake.data[5] = 0x00;
+			can_msg_brake.data[6] = 0x00;
+			can_msg_brake.data[7] = 0x00;
+
+			// CANメッセージを送信（ブレーキ力）
+			can_pub_->publish(can_msg_brake);
 		}
 	}
 
@@ -180,7 +226,9 @@ private:
   rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_pub_;
   //rclcpp::TimerBase::SharedPtr timer_;
 
-  int16_t throttle;
+	int16_t steering_angle;
+	int16_t throttle;
+	int16_t brake_force;
 };
 
 int main(int argc, char** argv)

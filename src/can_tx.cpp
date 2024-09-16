@@ -131,8 +131,8 @@ private:
     can_msg_throttle.data[1] = 0x08; // mode
     can_msg_throttle.data[2] = 0x31; // PID for brake force
     can_msg_throttle.data[3] = 0x01; // auto mode
-    can_msg_throttle.data[4] = (throttle>0)?1:2; // Low byte of brake force
-    can_msg_throttle.data[5] = throttle;
+    can_msg_throttle.data[4] = (throttle>=0)?1:2; // Low byte of brake force
+    can_msg_throttle.data[5] = std::abs(throttle);
     can_msg_throttle.data[6] = 0x00;
     can_msg_throttle.data[7] = 0x00;
     for(uint8_t i=0; i<7; i++){
